@@ -877,7 +877,20 @@ window.location.reload(true);
 ### PDF文本区域换行
 
 ```java
+public static string creatHuanhang(string sources,integer count){
+    string temp='';
+    //count=20;//每行显示的字数，现设为6，根据需要设置
+    if(sources!=null&&sources.length()!=0 &&sources.length()>count){
+        integer si=sources.length()/count;  
+        for(integer i=0;i<si;i++){
+            temp+=sources.substring(i*count,i*count+count)+' ';
+        }
+        if(sources.length()-si*count>0){
+            temp+=sources.substring(si*count, sources.length())+' ';
+        }
+        System.debug('TEST========'+temp);
+        return temp;
+    }
+    return sources;
+}
 ```
-
-
-
