@@ -894,3 +894,10 @@ public static string creatHuanhang(string sources,integer count){
     return sources;
 }
 ```
+
+### 数字显示两位小数
+
+```html
+<th valign="top" width="11%"><apex:outputText value="${0, number, ###,###,###,###,##0.00}"><apex:param value="{!itemo.TotalPrice}" /></apex:outputText></th>
+```
+
