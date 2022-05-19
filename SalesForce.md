@@ -901,3 +901,22 @@ public static string creatHuanhang(string sources,integer count){
 <th valign="top" width="11%"><apex:outputText value="${0, number, ###,###,###,###,##0.00}"><apex:param value="{!itemo.TotalPrice}" /></apex:outputText></th>
 ```
 
+### 操作样式布局动态调整（通过是否展示样式参数来控制）
+
+```html
+<aura:if isTrue="{!v.isAMP}">
+		<aura:html tag="style">
+			.slds-modal__container {
+			width : 45% ;
+			max-width : 100% !important;
+			height : 100% !important;
+			}
+			.slds-modal__content{
+			overflow-y:hidden !important;
+			height:unset !important;
+			max-height:unset !important;
+			}
+		</aura:html>
+	</aura:if>
+```
+
