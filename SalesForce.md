@@ -920,3 +920,67 @@ public static string creatHuanhang(string sources,integer count){
 	</aura:if>
 ```
 
+### 系统内部数据迁移
+
+也可用于数据创建做参考
+
+```java
+// 根据已迁移的Account来查找需要迁移的Commission_And_Service_Agreement__c对象
+List<Account> newAccountList= [select Id,Company_Code__c,isImport__c,oldAccount__c from Account where Company_Code__c = '1280' and isImport__c = true];
+// Map<oldId,Id>
+Map<String,String> accMap = new Map<String,String>();
+for(Account acc:newAccountList){
+    accMap.put(acc.oldAccount__c, acc.Id);
+}
+System.debug(accMap.size());
+Set<String> oldAcoountIdSet = accMap.KeySet();
+// 获取所有字段
+Map<String, Schema.SObjectField> fieldMap = Schema.SObjectType.Commission_And_Service_Agreement__c.fields.getMap();
+System.debug(fieldMap);
+String sql = 'select ';
+for(String key : fieldMap.keySet()){
+    sql += key+',';
+}
+sql = sql.substring(0, sql.length()-1);
+sql += ' From Commission_And_Service_Agreement__c WHERE Commission_And_Service_Account__c IN: oldAcoountIdSet';
+List<Commission_And_Service_Agreement__c> oldObjectList = Database.query(sql);
+List<Commission_And_Service_Agreement__c> newObjectList = new List<Commission_And_Service_Agreement__c>();
+// 所有需要同步的对象
+System.debug(oldObjectList.size());
+for(Commission_And_Service_Agreement__c item:oldObjectList){
+    Commission_And_Service_Agreement__c newObj = item.clone();
+    newObj.oldRecord__c = item.Id;
+    newObj.isImport__c = true;
+    // Important!!
+    newObj.Commission_And_Service_Account__c = accMap.get(item.Commission_And_Service_Account__c);
+    newObjectList.add(newObj);
+}
+System.debug(newObjectList);
+
+List<Database.SaveResult> ceretedResultList =  Database.insert(newObjectList,false);
+Integer i =0;
+Set<String> accIdSet = new Set<String>();
+for(Database.SaveResult res :  ceretedResultList){
+    if(!res.isSuccess()){
+        System.debug('Insert Faild:this is oldRecordId: ' + newObjectList[i].oldRecord__c);
+        System.debug(res.getErrors());
+    }
+    i++;
+}
+
+
+// 处理新生成对象间的查找关系
+List<Commission_And_Service_Agreement__c> createdObjectList = [SELECT Id,oldRecord__c,isImport__c,afterCommission__c,BeforeCommission__c FROM Commission_And_Service_Agreement__c WHERE isImport__c = true];
+// 对象间存在查找关系<oldId,newId>
+Map<String,String> newObjectLookupMap = new Map<String,String>();
+newObjectLookupMap.put('','');
+for(Commission_And_Service_Agreement__c newObj:createdObjectList){
+    newObjectLookupMap.put(newObj.oldRecord__c, newObj.Id);
+}
+for(Commission_And_Service_Agreement__c newObj:createdObjectList){
+    newObj.afterCommission__c = newObjectLookupMap.get(newObj.afterCommission__c);
+    newObj.BeforeCommission__c = newObjectLookupMap.get(newObj.BeforeCommission__c);
+}
+update createdObjectList;
+```
+
