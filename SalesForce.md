@@ -404,7 +404,7 @@ checkTPP: function(cmp){
 public class SaleLeadImportCtrTest{
 
     @isTest
-    private static void insertData_Test(){
+    private static void testMethod(){
         String str1 = '[{"客户名称*":"中国石化1","分销商代码*":3013,"电子邮件":"mail@mail.com","省份":"浙江","城市":"合肥"},{"客户名称*":"中国石化2","分销商代码*":3013,"电子邮件":"yun","省份":"浙江","城市":"衢州"},{"客户名称*":22,"分销商代码*":77,"姓名":"name3","电子邮件":"mail@mail.com","省份":"浙江","城市":"杭州"}]';
 
         Test.startTest();
@@ -983,4 +983,3 @@ for(Commission_And_Service_Agreement__c newObj:createdObjectList){
 }
 update createdObjectList;
 ```
-
