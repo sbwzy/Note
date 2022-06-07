@@ -825,6 +825,14 @@ $A.get('e.force:refreshView').fire();
 select Id,Name,toLabel(Address) FROM Account
 ```
 
+### 查找所有的字段(Must Limit 200)
+
+```java
+select FIELDS(ALL) FROM InterfaceLog__c Order by CreatedDate desc limit 20
+```
+
+
+
 ### 新建记录组件，阻止跳转
 
 ```js
@@ -983,3 +991,162 @@ for(Commission_And_Service_Agreement__c newObj:createdObjectList){
 }
 update createdObjectList;
 ```
+
+### 代码调用接口（Post）
+
+```java
+// post向外服务器传输对象并获得返回
+public without sharing class SFInfoCreateInterface {
+    // 接口申明
+	@future (callout = true)
+	public static void createSFCSDelivery(String accountId) {
+		createSFCSImmediately(accountId);
+	}
+    public static void createSFCSImmediately(String accountId) {
+        Map<String, String> returnMsgs = new Map<String, String>();
+        // 自定义对象 InterfaceLog__c，用于保存每次调用的结果
+		InterfaceLog__c infLog = new InterfaceLog__c();
+        infLog.InterfaceClassName__c = 'SFInfoCreateInterface';
+        infLog.InterfaceName__c = 'SF主动推送客户信息到ESB';
+        
+        // 传数据内部类
+        theAccountData accData = new theAccountData();
+        List<Account> AccountList=[select id,SalesOrganization__c,SalesOrganizationSY__c,SYSAPSynchronizationStatus__c,JYInforSynchronizationStatus__c,name,Customer_code__c,prefix__c,paymentterm__c,language__c,CountryCode__c,City__c,fingroup__c,invmethod__c,OuZhouInforCode__c,UserDepartment__c,CurrencyIsoCode,JYcreditbalanceCurrency__c,creditbalanceCurrency__c from account where id=:accountId];
+        Account updateAcc = new Account();
+        if(AccountList.size()>0){
+            updateAcc = AccountList[0];
+        }
+        try{ 
+            // 需要额外处理的字段
+            String accountCurrency='';
+            
+            if(AccountList.size()>0){
+                //币种 payByBusinessPartnerCurrency
+                if(updateAcc.UserDepartment__c=='家用事业部'){
+                    accountCurrency=updateAcc.JYcreditbalanceCurrency__c;
+                }else if(updateAcc.UserDepartment__c=='商用事业部'){
+                    accountCurrency=updateAcc.creditbalanceCurrency__c;
+                }else{
+                    accountCurrency=updateAcc.CurrencyIsoCode;
+                }
+                
+                System.debug(accountCurrency);
+
+                accData.prefix = '';//updateAcc.prefix__c; // 非必填
+                accData.currencys = accountCurrency;
+                accData.language = '';//updateAcc.language__c; // 非必填
+                accData.bpname = updateAcc.name;
+                accData.country = updateAcc.CountryCode__c;
+                accData.city = updateAcc.City__c;
+                accData.street = '';// updateAcc.street__c;
+                accData.housenr = '';// updateAcc.Company_Address__c;
+                accData.postal = '';// '/';
+                accData.fingroup = '';//updateAcc.fingroup__c; // 非必填
+                accData.invmethod = '';//updateAcc.invmethod__c; // 非必填
+                accData.paymentterm = updateAcc.paymentterm__c == null ? '/' : updateAcc.paymentterm__c; // 非必填
+                accData.sfcode = '';//updateAcc.Customer_code__c; // 非必填
+                accData.unit = 'Sanhua-Europe';
+            }
+            
+            
+            //传参JSON
+            String bodyJson = JSON.serialize(accData);
+            System.debug('bodyJson: ' + bodyJson);
+            //接口body
+            infLog.SyncBody__c = bodyJson;
+            
+            //封装请求
+            Http htp = new Http();
+            HttpRequest request = new HttpRequest();
+            request.setBody(bodyJson);
+            // 自定义标签设置请求地址：http://60.190.193.66:19088/api/Domain/ESBTest/infor/newbp?appkey=ffb9c732bdb24fa2a6cc945f7591c598
+            request.setEndpoint(Label.ESBINFOR);
+            request.setMethod('POST');
+            request.setTimeout(120000);
+            request.setHeader('Content-type', 'application/json');
+            //Blob headerValue = Blob.valueOf(poApi.UserName__c + ':' + poApi.Password__c);
+            //String authorizationHeader = 'Basic ' + EncodingUtil.base64Encode(headerValue);
+            //request.setHeader('Authorization', authorizationHeader);
+            HttpResponse res = new HttpResponse();
+            if(Test.isRunningTest()){
+                //测试环境
+                System.debug('******in test!!');
+                res.setBody('');
+            }
+            else{
+                res = htp.send(request);
+                System.debug('******not test!!');
+                System.debug('*****res= '+res);
+                System.debug('*****res.getBody()= '+res.getBody());
+            }
+            //返回数据，自定义内部类接收
+            theReturnData trd = new theReturnData();
+
+            String respStr = res.getBody();
+            System.debug('原始返回：'+respStr);
+            // 格式处理
+            if(!Test.isRunningTest())respStr = respStr.substring(1,respStr.length()-1);
+            System.debug('去除后：'+respStr);
+            // 测试环境用例
+            if(Test.isRunningTest())respStr ='{"status":"1"}';
+
+            // 返回结果处理
+            trd = (theReturnData)JSON.deserialize(respStr, theReturnData.class);
+            System.debug(trd);
+            // infLog.ErrorMsg__c=rd.msg;
+            System.debug('trd.Response: ' + trd.Response);
+            if(trd.Response=='Success'){
+                infLog.SyncResult__c='同步成功';
+                updateAcc.OuZhouInforCode__c = trd.Value;
+            }else{
+                infLog.SyncResult__c='同步失败';
+            }
+        }catch(Exception ex){
+            infLog.SyncResult__c = '同步失败';
+            infLog.RecordId__c = accountId;
+            infLog.ErrorMsg__c = '报错行数：'+ex.getLineNumber()+':'+ex.getMessage();
+            infLog.id=null;
+        }
+
+        if(updateAcc.UserDepartment__c=='家用事业部'){
+            if(infLog.SyncResult__c=='同步成功'){
+                updateAcc.JYInforSynchronizationStatus__c = '同步成功';
+            }else if(infLog.SyncResult__c == '同步失败'){
+                updateAcc.JYInforSynchronizationStatus__c = '同步失败';
+            }
+        }else if(updateAcc.UserDepartment__c=='商用事业部'){
+            if(infLog.SyncResult__c=='同步成功'){
+                updateAcc.SYInforSynchronizationStatus__c = '同步成功';
+            }else if(infLog.SyncResult__c == '同步失败'){
+                updateAcc.SYInforSynchronizationStatus__c = '同步失败';
+            }
+        }
+
+        insert infLog;
+        update updateAcc;
+    }
+    
+    public class theAccountData {
+        public String prefix;
+        public String currencys;
+        public String language;
+        public String bpname;
+        public String country;
+        public String city;
+        public String street;
+        public String housenr;
+        public String postal;
+        public String fingroup;
+        public String invmethod;
+        public String paymentterm;
+        public String sfcode;
+        public String unit;
+    }
+
+    public class theReturnData {
+        public String Value;
+        public String Response;
+    }
+}
+```
+
