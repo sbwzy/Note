@@ -1150,3 +1150,9 @@ public without sharing class SFInfoCreateInterface {
 }
 ```
 
+### JS中是用自定义标签Label
+
+```js
+$A.get("$Label.c.ApplyAccountType1")
+```
+
