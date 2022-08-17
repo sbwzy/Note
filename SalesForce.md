@@ -1,224 +1,15 @@
-# SalesForce
+## 小知识点
 
-## SalesForce 介绍
++ 用户停用的时候，如果有该用户为收件人的邮件警告，那么不能停用该用户
 
-+ 有较多模块，需要付费
-+ 有自动翻译功能，但自定义的变量需要手动翻译 
-+ 无需安装，显示报表与图表，提升效率大
-+ 安全性高
-+ 提供售后支持，可以提问题
+### Trigger
 
-> lighting模式：现今主要采用该模式
->
-> classic模式：
-
-## SalesForce术语
-
-+ 对象：具有特定数据类型的属性，属性与数据库表中的列字段相似
-+ + 标准对象
-  + 自定义对象：有==__c==(custom)作为后缀
-+ 工作流：一组逻辑规则：在特定的触发节点，进行一些操作
-+ 字段：对象的一个属性；库里的一个表；存在大量默认字段未显示
-+ 角色：工作职位，有上下级、同级关系；在前期阶段就要与客户确定好（树形结构，上级可以浏览下级的记录）（控制用户的访问权限）
-+ 简档：定义用户可以执行的任务；他们可以看到的数据；他们对数据的操作权权限(控制用户的操作权限)
-+ 活动：系统标准的对象
-+ 记录：存储有关特定项目的所有信息
-+ 视图：记录列表筛选器
-+ 页面字段前带：必填项的标识
-+ 报表：数据展示
-+ 仪表盘：数据展示
-+ 回收站：暂存最近删除的数据，有容量的限制
-+ 自定义功能：通过SalesForce的自定义平台可以快速自建模块等等
-+ 云计算：云端编译与数据处理
-+ 分派：将Owner为自己的记录assign给其他人员，更改“所有人”
-+ 搜索：模块内精确搜索与全局搜索
-+ 读取：查看信息
-+ 编辑：有权限就可对数据进行编辑操作
-+ 共享：允许其他用户查看或编辑您拥有的信息
-+ + 共享模式：定义用户对相互之间的信息拥有的默认组织范围访问权限级别；在确定对数据的访问权限时是否使用层次结构
-  + 角色层次结构：上下级的不同权限设置（上层可以看到下层）
-+ else
-
-## 对象
-
-+ 字段
-+ + 主详细关系：相当于数据库中的主键
-  + 查找关系：弱一级的主键，主记录被删除子记录无影响
-+ 文本区：允许输入格式化文本、链接和图片
-+ 记录类型：
-
-## 工作流规则
-
-
-
-一条记录占用2KB
-
-
-
-# Day2(06-21)
-
-+ 在页面上选择”必填“，不在字段中设置为”必填“（严格，导入时易报错）
-
-+ 面一个记录类型和简档都对应一个页面布局
-
-+ 流操作无法取消激活，若要更改需要另存为再激活
-+ Integer Stringi = integer.valueof("1111");
-
-+　跨对象查询，一次查询多个对象，最大返回2000条数据
-
-```APEX
-String SOSL = 'FIND {' + '测试客户' + ' OR ' + 'Test' + '} IN Name Fields RETURNING Account(name,phone),Contact(name,phone)';
-List<List<SObject>> searchList = search.query(SOSL);
-system.debug(searchList);
-```
-
-+ 添加数据
-
-```APEX
-List<Account> acctList = new List<Account>();
-acctlist.add(new Account(Name='Sales User1'));
-Insert acctlist;
-```
-
-+　更新数据
-
-```APEX
-List<Account> acctList = [SELECT Id,Name FROM Account where id='0015g00000GQVPbAAP'];
-for(Account acc:acctList){
-    acc.Name = 'Update Sales User1';
-}
-Update acctList;
-```
-
-+ 数据库操作返回结果
-
-```
-List<Account> accountList = new List<Account>();
-accountList.add(new Account(Name = 'Sales User 2'));
-Database.SaveResult[] saveResult = Database.Insert(accountList,FALSE);
-for(Database.SaveResult result : saveResult){
-    if(result.isSuccess()){
-        System.debug(LoggingLevel.INFO, '*** result.getId():' + result.getId());
-    }else{
-        System.debug(LoggingLevel.INFO, '*** result.getErrors():' + result.getErrors());
-    }
-}
-```
-
-+ 数据库事务保存点
-
-```
-Savepoint savePoint = Database.setSavepoint();
-Database.rollback(savePoint);
-```
-
-+ 关联查询
-
-```
-List<Account> accountList = [SELECT Id
-                             , name
-                             , ParentId
-                             , Parent.ParentId
-                             , Parent.Parent.ParentId
-                             , Parent.Parent.Parent.ParentId
-                             , Parent.Parent.Parent.Parent.ParentId
-                             FROM Account];
-System.debug(LoggingLevel.INFO, '*** accountList:' + accountList);
-
-List<OrderDetails__c> orderDetailList = [SELECT Id
-                                         , Name
-                                         , Quantity__c
-                                         , customOrder__r.Name
-                                         , customOrder__r.remarks__c
-                                         , customOrder__r.account__r.Name
-                                        FROM OrderDateils__c];
-System.debug(LoggingLevel.INFO, '***orderDetailsList: ' + orderDetailsList);
-```
-
-+ 自定义控制器的使用
-
-  myFirstCtrl.cls
-
-  ```
-  public class myFirstCtrl {
-      public List<Account> accList {get;set;}
-  
-      public myFirstCtrl(ApexPages.StandardController con){
-          accList = [SELECT Id,Name FROM Account LIMIT 10];
-      }
-  }
-  ```
-
-  MyFirstPage.page
-
-  ```
-  public class myFirstCtrl {
-      public List<Account> accList {get;set;}
-  
-      public myFirstCtrl(ApexPages.StandardController con){
-          accList = [SELECT Id,Name FROM Account LIMIT 10];
-      }
-  }
-  ```
-
-  ## Day3(06-22)
-
-  
-
-before update:修改自身
-
-after update:更新一个其他对象，是个过程
-
-
-
-
-
-## Day4(07-01)
-
-#### halper.js如何调用后台方法
-
-1.APEX方法实例申明
-
-2.设置参数
-
-3.设置回调函数
-
-4.排队
-
-#### 交互
-
-父->子：属性
-
-component;子->父
-
-application：应用级别的所有的都可接收（耗资源）
-
-
-
-1. + 子：注册，父：声明处理事件
-   + 注册：compent **name** type
-   + 处理 ：                **name** type action
-   + application 不用在处理中一定有 **name**
-
-# lightning
-
-1.appliciationEvent 应用事件
-
-+ 子组件发出，所有组件都可以接收到
-+ 耗资源
-
-2.componentEvent 组件事件
-
-+ 只可用于子组件向父组件发出
-
-# Trigger
-
-### 分类
+#### 分类
 
 + 以执行顺序分类有：before（保存之前），after（保存之后）
 + 以DML类型（数据操作类型）有：insert（新增）、update（更新）、delete（删除）、undelete（恢复删除）
 
-### 属性
+#### 属性
 
 + isInsert：当前操作是否正在执行**添加**操作
 + isUpdate：当前操作是否正在执行**修改**操作
@@ -235,11 +26,11 @@ application：应用级别的所有的都可接收（耗资源）
 + Trigger.newMap:适用于执行before update，after insert以及after update的trigger操作
 + Trigger.old以及Trigger.oldMap适用于update和delete操作
 
-# 批处理
+### 批处理
 
 应用场景：大数据量的DML操作或查询操作，如查询数据量超过50000、新增、修改和删除的数据量超过10000时
 
-### 语法
+#### 语法
 
 1.实现Datebase.Batchable、Database.Stateful接口
 
