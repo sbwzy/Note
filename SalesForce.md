@@ -191,6 +191,7 @@ checkTPP: function(cmp){
 ### 测试类书写
 
 ```java
+@isTest(seeAllData=true) // 可以调用系统内的数据
 @isTest
 public class SaleLeadImportCtrTest{
 
@@ -946,4 +947,235 @@ public without sharing class SFInfoCreateInterface {
 ```js
 $A.get("$Label.c.ApplyAccountType1")
 ```
+
+### 获取对象类型
+
+```java
+if (atts.ParentId.getSobjectType() == Product2.SobjectType)
+```
+
+### VF中Boolean类型的判定
+
+```html
+<aura:if isTrue="{!!v.isAMPShow}"></aura:if>
+<aura:if isTrue="{!v.isAMPShow}"></aura:if>
+```
+
+### 触发器实现对象下是否有文件的赋值
+
+创建时要在ContentDocumentLink对象下
+
+```java
+public class ContentDocumentLinkTriggerHandler extends CMN_TriggerHandler {
+    
+    public override void onAfterInsert(List<SObject> newList, Map<Id, SObject> newMap){
+    	
+        Set<String> pmContentDocumentLinkSet = new Set<String>();
+    	for(ContentDocumentLink clIterator : (List<ContentDocumentLink>)newList) {          
+            if(clIterator.LinkedEntityId.getSobjectType() == Protocol_Management__c.SobjectType) {
+                pmContentDocumentLinkSet.add(clIterator.LinkedEntityId);
+            }
+        }
+ 
+        System.debug('pmContentDocumentLinkSet: '+pmContentDocumentLinkSet);
+        if(!pmContentDocumentLinkSet.isEmpty()){
+            List<Protocol_Management__c> updatePmList = [SELECT Id,haveDocumentation__c FROM Protocol_Management__c WHERE Id IN :pmContentDocumentLinkSet];
+            if(!updatePmList.isEmpty()){
+                for(Protocol_Management__c pm : updatePmList){
+                    pm.haveDocumentation__c = true;
+                }
+                System.debug('updatePmList: '+updatePmList);
+                Database.update(updatePmList, false);
+            }
+        }     
+    }
+}
+```
+
+附相关测试类逻辑
+
+```java
+ContentVersion contentVersionInsert = new ContentVersion(
+            Title = 'Test',
+            PathOnClient = 'Test.jpg',
+            VersionData = Blob.valueOf('Test Content Data'),
+            IsMajorVersion = true
+        );
+        insert contentVersionInsert;
+ 
+        // Test INSERT
+        ContentVersion contentVersionSelect = [SELECT Id, Title, ContentDocumentId FROM ContentVersion WHERE Id = :contentVersionInsert.Id LIMIT 1];
+        List<ContentDocument> documents = [SELECT Id, Title, LatestPublishedVersionId FROM ContentDocument];
+        ContentDocumentLink cDe = new ContentDocumentLink();
+				cDe.ContentDocumentId = documents[0].Id;
+				cDe.LinkedEntityId = am.Id; // you can use objectId,GroupId etc
+				cDe.ShareType = 'I'; // Inferred permission, checkout description of ContentDocumentLink object for more details
+				cDe.Visibility = 'AllUsers';
+		insert cDe;
+```
+
+删除的逻辑要写在ContentDocument对象上，ContentDocumentLink上的删除触发器不触发？（有可能是isDelete赋值为true）
+
+```java
+trigger ContentDocumentTrigger on ContentDocument (before delete, after insert) {
+    if(Trigger.isBefore && Trigger.isDelete){
+        System.debug('进入beforeDelete');
+        List<ContentDocument> oldList = Trigger.old;
+        Map<Id, ContentDocument> oldMap = Trigger.oldMap;
+        System.debug('oldList='+oldList);
+        System.debug(oldMap.keySet());
+        Set<String> pmContentDocumentSet = new Set<String>();
+
+        List<ContentDocumentLink> cdlList = [SELECT ContentDocumentId, LinkedEntityId, Id, IsDeleted FROM ContentDocumentLink where ContentDocumentId IN :oldMap.keySet()];
+        for(ContentDocumentLink clIterator : cdlList) {
+            if(clIterator.LinkedEntityId.getSobjectType() == Protocol_Management__c.SobjectType) {
+                pmContentDocumentSet.add(clIterator.LinkedEntityId);
+            }
+        }
+
+        System.debug('pmContentDocumentSet: '+pmContentDocumentSet);
+        if(!pmContentDocumentSet.isEmpty()){
+            List<Protocol_Management__c> updatePmList = [SELECT Id,haveDocumentation__c,(SELECT Id, LinkedEntityId, ContentDocumentId, IsDeleted FROM ContentDocumentLinks WHERE ContentDocumentId != null) FROM Protocol_Management__c WHERE Id IN :pmContentDocumentSet];
+            if(!updatePmList.isEmpty()){
+                for(Protocol_Management__c pm : updatePmList){
+                    if(pm.ContentDocumentLinks.size() <= 1){
+                        pm.haveDocumentation__c = false;
+                    }
+                }
+                System.debug('updatePmList: '+updatePmList);
+                Database.update(updatePmList, false);
+            }
+        }
+    }
+}
+```
+
+测试类
+
+```java
+@isTest(seeAllData = true)
+public with sharing class ContentDocumentTriggerTest {
+    @isTest
+    private static void testMethod1(){
+        Protocol_Management__c pMan = [SELECT Id,haveDocumentation__c FROM Protocol_Management__c Limit 1];
+
+        Test.startTest();
+        ContentVersion cv = new ContentVersion(
+            Title = 'Title_test', 
+            VersionData = Blob.valueOf('Fake content'),
+            PathOnClient = 'testTilePdf.pdf',
+            Origin = 'C'
+        );
+        insert cv;
+
+        ContentDocument cd = [
+            SELECT Id
+            FROM ContentDocument
+            WHERE LatestPublishedVersionId = :cv.Id
+            WITH SECURITY_ENFORCED
+        ];
+
+        ContentDocumentLink contentDocumentLink = new ContentDocumentLink(
+            ContentDocumentId = cd.Id,
+            LinkedEntityId = pMan.Id,
+            ShareType = 'V'
+        );
+        insert contentDocumentLink;
+        delete cd;
+        Test.stopTest();
+    }
+}
+```
+
+### ContentDocument 与 ContentDocumentLink实现文件上传（带Icon）
+
+```java
+Pagereference page;
+if(numMap.get(recordId) > 2){
+    System.debug('page > 2');
+    page = new Pagereference('/apex/AMPInvoicePage');
+}else{
+    System.debug('page <= 2');
+    page = new Pagereference('/apex/AMPInvoicePageOne');
+}
+page.getParameters().put('id',recordId);
+Blob pdf = !Test.isRunningTest() ? page.getContentAsPDF() : Blob.valueOf('Fake content');
+System.debug('pdf:'+pdf);
+
+// Attachment attach = new Attachment(Name = IdMap.get(recordId) + '_' + Date.today().format()+'.pdf',body=pdf,ParentId=recordId); // ai.Invoice_Number__c +'_'+ Date.today().format()
+// insert attach;
+
+ContentVersion cv = new ContentVersion(
+    Title = IdMap.get(recordId) + '_' + Date.today().format(), 
+    VersionData = pdf,
+    PathOnClient = IdMap.get(recordId) + '_' + Date.today().format()+'.pdf',
+    Origin = 'C'
+);
+insert cv;
+System.debug(cv);
+
+ContentDocument cd = [
+    SELECT Id
+    FROM ContentDocument
+    WHERE LatestPublishedVersionId = :cv.Id
+    WITH SECURITY_ENFORCED
+];
+System.debug(cd);
+
+ContentDocumentLink contentDocumentLink = new ContentDocumentLink(
+    ContentDocumentId = cd.Id,
+    LinkedEntityId = recordId,
+    ShareType = 'V'
+);
+insert contentDocumentLink;
+System.debug(contentDocumentLink);
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
