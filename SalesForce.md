@@ -1136,7 +1136,50 @@ insert contentDocumentLink;
 System.debug(contentDocumentLink);
 ```
 
+### 在VF页面上控制是否展示某内容（可用于PDF）
 
+```html
+<apex:outputText rendered="{!NCNR}"> <!-- NCNR为在后台类中控制的Boolean类型变量 -->
+    <p style="text-align:left;font-size:11px;font-weight:bolder;">ITEMS QUOTED ARE NON-CANCELABLE NON-RETURNABLE</p>
+</apex:outputText>
+```
+
+### SQL 分类并显示数量
+
+```sql
+SELECT SyncMessage,COUNT(ProductCode) AS Number FROM SAP_Product WHERE  SyncTime >= '2022-09-3 00:00' and SyncFlag = '2' group by SyncMessage
+```
+
+### 在SOQL中的WHERE条件中使用时间
+
+```sql
+select Id,createdDate,lastModifiedDate FROM Product2 WHERE lastModifiedDate > 2022-09-01T00:00:00z 
+```
+
+### 以指定字段为Key更新数据
+
+```java
+Schema.SObjectField externalIdField = ContactPonitAddressSync__c.Fields.Ship_Bill_To_ID__c;
+uResults = Database.upsert (cpasList, externalIdField, false);
+
+for (Integer i = 0; i < uResults.size(); i++){
+    SObject so = upsertlist[i];
+    Database.upsertResult result = uResults[i];
+    System.debug(result.isSuccess());
+    if (result.isSuccess()){
+        so.put('Sync_Status__c', '1');
+        so.put('Sync_Message__c', '1');//返回1代表upsert成功
+    } else{
+        String msg = '';
+        for (Database.Error e : result.getErrors()){
+            System.debug('Error = ' + e.getMessage());
+            msg += e.getMessage();
+        }
+        so.put('Sync_Message__c', msg);
+        so.put('Sync_Status__c', '2');
+    }
+}
+```
 
 
 
