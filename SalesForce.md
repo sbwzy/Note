@@ -1181,6 +1181,530 @@ for (Integer i = 0; i < uResults.size(); i++){
 }
 ```
 
+### 记录上锁解锁
+
+```java
+public static void lockRecord(Set<Id> IdList){
+    for(Id theId:IdList){
+        if(!Approval.isLocked(theId)){//Approval.isLocked(id) 判断记录是否加锁
+            Approval.lockResult ur = Approval.lock(theId);//给一条记录加锁
+            if (ur.isSuccess()) {//方法执行状态
+                System.debug('成功锁定记录，ID为:' + theId);
+            } else {
+                for(Database.Error err : ur.getErrors()) { 
+                    System.debug('锁定失败'); 
+                    System.debug('=============失败消息:' + err.getStatusCode() + ': ' + err.getMessage());
+                }
+            }
+        }
+    }
+}
+
+
+public static void unlockRecord(Set<Id> IdList){
+    for(Id theId:IdList){
+        if(Approval.isLocked(theId)){//Approval.isLocked(id) 判断记录是否加锁
+            Approval.UnlockResult ur = Approval.unlock(theId);//给一条记录加锁
+            if (ur.isSuccess()) {//方法执行状态
+                System.debug('成功解锁记录，ID为:' + theId);
+            } else {
+                for(Database.Error err : ur.getErrors()) { 
+                    System.debug('解锁失败'); 
+                    System.debug('=============失败消息:' + err.getStatusCode() + ': ' + err.getMessage());
+                }
+            }
+        }
+    }
+}
+```
+
+### PDF模板
+
+```html
+<!--
+  @description       : 
+  @last modified on  : 09-01-2022
+-->
+<apex:page standardController="AMP_Invoice__c" renderAs="pdf" showheader="false" standardstylesheets="false" applyBodyTag="false"
+    contentType="text/html; charset=UTF-8" extensions="AMPInvoiceController">
+
+    <head>
+        <style type="text/css" media="print">
+            body {
+                font-family: Arial Unicode MS;
+                font-size: 10px;
+                font-weight: 200;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin-left: 20px;
+                margin-right: 20px;
+                margin-top: 330px;
+                margin-bottom: 200px;
+
+                @top-center {
+                    content: element(header);
+                }
+
+                @bottom-left {
+                    content: element(footer);
+                }
+            }
+
+            @page:last {
+                size: A4 portrait;
+                margin-left: 20px;
+                margin-right: 20px;
+                margin-top: 330px;
+                margin-bottom: 200px;
+
+                @top-center {
+                    content: element(header);
+                }
+
+                @bottom-left {
+                    content: element(footer_last);
+                }
+            }
+
+            div.header {
+                display: block;
+                height: 330px;
+                position: running(header);
+            }
+
+            div.footer {
+                display: block;
+                padding: 5px;
+                position: running(footer);
+            }
+
+            div.footer_last {
+                display: block;
+                padding: 5px;
+                position: running(footer);
+            }
+
+            .pagenumber:before {
+                content: counter(page);
+            }
+
+            .pagecount:before {
+                content: counter(pages);
+            }
+        </style>
+    </head>
+
+    <!-- 页眉 -->
+    <div class="header" style="height:330px">
+        <table style="width: 725.6px; margin-bottom:10px;">
+            <tbody>
+                <tr>
+                    <td style="width: 176px;" rowspan="2">
+                        <img src="/resource/AMPQuote" width="176" height="56" />
+                    </td>
+                    <td style="width: 153.6px;" rowspan="2">
+                        <p style="margin: 0.6pt 0.55pt 0.0001pt 1pt; line-height: 110%; font-size: 9pt; font-family: 'Times New Roman', serif;">Applied Motion Products, Inc.</p>
+                        <p style="margin: 0.6pt 0.55pt 0.0001pt 1pt; line-height: 110%; font-size: 9pt; font-family: 'Times New Roman', serif;">18645 Madrone Parkway</p>
+                        <p style="margin: 0.6pt 0.55pt 0.0001pt 1pt; line-height: 110%; font-size: 9pt; font-family: 'Times New Roman', serif;">Morgan Hill CA 95037</p>
+                        <p style="margin: 0cm 0cm 0cm 1pt; line-height: 10.25pt; font-size: 9pt; font-family: 'Times New Roman', serif;">408-612-4375</p>
+                    </td>
+                    <td style="width: 236.2px;">
+                        <p style=" line-height: 30pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt;">&nbsp;</span>
+                            </strong>
+                            <span style="font-size: 9.0pt;">&nbsp;</span>
+                        </p>
+                    </td>
+                    <td style="width: 104.6px;">
+                        <p style="margin: 0.45pt 0cm 0.0001pt 1pt; font-size: 11pt; font-family: 'Times New Roman', serif; text-align: right;">
+                            <span style="font-size: 16.0pt; font-family: Arial, sans-serif;">{!AMP_Invoice__c.Title__c}</span>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 236.2px;" colspan="2">
+                        <div style="margin-left:70px">
+                            <p style="margin: 0.6pt 0cm 0.0001pt 12.5pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                                <strong>
+                                    <span style="font-size: 9.0pt;">Invoice Number:</span>
+                                </strong>
+                                <span style="font-size: 9pt;">{!InvoiceNumber}</span>
+                            </p>
+                            <p style="margin: 0.25pt 0.05pt 0.0001pt 56.25pt; text-indent: 0.45pt; line-height: 12.5pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                                <strong>
+                                    <span style="font-size: 9.0pt;">Date:</span>
+                                </strong>
+                                <span style="font-size: 9pt;">{!Invoice_Date}</span>
+                            </p>
+                            <p style="margin: 0.25pt 0.05pt 0.0001pt 56.25pt; text-indent: 0.45pt; line-height: 12.5pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                                <strong>
+                                    <span style="font-size: 9.0pt;">Page:</span>
+                                </strong>
+                                <span style="font-size: 9pt;">
+                                    <span class="pagenumber" /> of
+                                    <span class="pagecount" /></span>
+                            </p>
+                            <p style="margin: 0.25pt 0.05pt 0.0001pt 38.75pt; text-indent: 0.45pt; line-height: 12.5pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                                <strong>
+                                    <span style="font-size: 9.0pt;">Currency:&nbsp;</span>
+                                </strong>
+                                <span style="font-size: 9.0pt;">{!AMP_Invoice__c.CurrencyIsoCode}</span>
+                            </p>
+                            <p style="margin: 0.25pt 0.05pt 0.0001pt 47.5pt; text-indent: 0.45pt; line-height: 12.5pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                                <strong>
+                                    <span style="font-size: 9.0pt;">Ship to:</span>
+                                </strong>
+                                <span style="font-size: 9.0pt;">{!Ship_to_Number}</span>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="margin:  4.65pt 0cm 0.0001pt 34pt;">
+            <strong>
+                <span style="font-size: 9.0pt; ">Payer:</span>
+            </strong>
+            <span style="font-size: 9.0pt;">{!Payer}</span>
+        </p>
+        <table style="width: 99.9449%; height: 72.325px;">
+            <tbody>
+                <tr style="height: 72.325px;">
+                    <td style="width: 48.0441%; height: 72.325px;">
+                        <h2 style="margin: 4.65pt 0cm 0.0001pt 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">BILL TO:</h2>
+                        <p style="margin: 0.6pt 1.25pt 0.0001pt 34pt; line-height: 81%; font-size: 9pt; font-family: 'Times New Roman', serif;">{!BillTo1}</p>
+                        <p style="margin: 0.6pt 1.25pt 0.0001pt 34pt; line-height: 81%; font-size: 9pt; font-family: 'Times New Roman', serif;">{!BillTo2}</p>
+                        <p style="margin: 0 0 0 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!BillTo3}</p>
+                        <p style="margin: 0cm 0cm 0cm 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!BillTo4}</p>
+                    </td>
+                    <td style="width: 48.1543%; height: 72.325px;">
+                        <h2 style="margin: 4.65pt 0cm 0.0001pt 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">SHIP TO:</h2>
+                        <p style="margin: 0cm 0cm 0cm 34pt; line-height: 8.5pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!SHIPTo1}</p>
+                        <p style="margin: 0cm 0cm 0cm 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!SHIPTo2}</p>
+                        <p style="margin: 0 0 0 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!SHIPTo3}</p>
+                        <p style="margin: 0cm 0cm 0cm 34pt; line-height: 9.4pt; font-size: 9pt; font-family: 'Times New Roman', serif;">{!SHIPTo4}</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="TableNormal" style="margin-left: 6.0pt; border-collapse: collapse; border: none; text-align: center;" cellspacing="0"
+            cellpadding="0">
+            <tbody>
+                <tr style="height: 10.6pt;">
+                    <td style="width: 57.5pt;border: solid black 1.0pt; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;" valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Order</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 60pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;" valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Order Date</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 80.85pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;"
+                        valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0pt; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Purchase Order</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 60.85pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;"
+                        valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Packages</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 56.70pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;" valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Ref. PO#</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 72.35pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;"
+                        valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">N./G.Weight</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 82.55pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;"
+                        valign="top">
+                        <p style="margin: 0cm 0cm 0pt 0cm; text-align: center; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Ship Via</span>
+                            </strong>
+                        </p>
+                    </td>
+                    <td style="width: 100.2pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;" valign="top">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Terms</span>
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>{!Order_Number}</td>
+                    <td>{!Order_Date}</td>
+                    <td>{!Purchase_Order}</td>
+                    <td>{!Packages}</td>
+                    <td>{!AMP_Invoice__c.Ref_PO__c}</td>
+                    <td>{!AMP_Invoice__c.N_G_Weight__c}</td>
+                    <td>{!AMP_Invoice__c.Ship_Via__c}</td>
+                    <td>{!AMP_Invoice__c.Terms__c}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="margin: 0cm; font-size: 9pt; font-family: 'Times New Roman', serif;">
+            <span style="font-size: 12.0pt;">&nbsp;</span>
+        </p>
+    </div>
+    
+    <!-- 页脚 -->
+    <div class="footer" style="height:200px;">
+        <div style="border-top: 3px solid #000000;text-align: center;"></div>
+        <div style="font-size: 12pt;">COMMENTS:</div>
+    </div>
+
+    
+
+    <body>
+        <table class="TableNormal" style="border-collapse: collapse; border: none; -fs-table-paginate: paginate; page-break-inside:avoid;" cellspacing="0" cellpadding="0">
+            <thead style="display:table-header-group; text-align: center;">
+                <tr style="height: 10.6pt;">
+                    <th style="width: 39.7pt; border: solid black 1.0pt; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;" >
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Line/Rel</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 113pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">In Reference Order</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 85pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Ordered</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 85pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Shipped</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 73.7pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Back Order</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 85pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Unit Price</span>
+                            </strong>
+                        </p>
+                    </th>
+                    <th style="width: 99.2pt; border: solid black 1.0pt; border-left: none; background: #CCCCCC; padding: 0cm 0cm 0cm 0cm;">
+                        <p style="margin: 0cm 0cm 0cm 0cm; line-height: 9.6pt; font-size: 11pt; font-family: 'Times New Roman', serif;">
+                            <strong>
+                                <span style="font-size: 9.0pt; color: black;">Extend Price</span>
+                            </strong>
+                        </p>
+                    </th>
+                </tr>
+            </thead>
+
+            <apex:repeat value="{!qliList}" var="itemo">
+                <tbody>
+                    <tr style="height:20pt;"></tr>
+                    <tr style="text-align: center;">
+                        <td>{!itemo.Line_Rel}</td>
+                        <td>{!itemo.In_Reference_Order}</td>
+                        <td>{!itemo.Ordered}</td>
+                        <td>{!itemo.Shipped}</td>
+                        <td>{!itemo.Back_Order}</td>
+                        <td>{!itemo.Unit_Price}</td>
+                        <td>{!itemo.Extend_Price}</td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td colspan="6" >
+                            <div style="page-break-inside: avoid;">
+                                <b>
+                                    <div style="font-size: 9pt; font-family: 'Times New Roman', serif;">CI: {!itemo.CI}</div>
+                                </b>
+                                <b>
+                                    <div style="font-size: 9pt; font-family: 'Times New Roman', serif;">Item: {!itemo.Item}</div>
+                                </b>
+                                <b>
+                                    <div style="font-size: 9pt; font-family: 'Times New Roman', serif;">Ref.Item: {!itemo.Ref_Item}</div>
+                                </b>
+                                <b>
+                                    <div style="font-size: 9pt; font-family: 'Times New Roman', serif;">Description: {!itemo.Description}</div>
+                                </b>
+                                <b>
+                                    <div style="font-size: 9pt; font-family: 'Times New Roman', serif;">U/M: {!itemo.U_M}</div>
+                                </b>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </apex:repeat>
+        </table>
+        <p style="margin: 0.3pt 0cm 0cm; font-size: 9pt; font-family: 'Times New Roman', serif;">&nbsp;</p>
+        <div style="margin:60px 100px 0px 200px">
+            <table style="font-size: 9pt; font-family: 'Times New Roman', serif;">
+                <tr>
+                    <td>
+                        <b>Packing Slip:</b>
+                    </td>
+                    <td>
+                        <b>{!Packing_Slip}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>Shipped on:</b>
+                    </td>
+                    <td>
+                        <b>{!Shipped_on}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>Tracking#:</b>
+                    </td>
+                    <td>
+                        <b>{!AMP_Invoice__c.Tracking__c}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>Service:</b>
+                    </td>
+                    <td>
+                        <b>{!AMP_Invoice__c.Service__c}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>Total Weight:</b>
+                    </td>
+                    <td>
+                        <b>{!AMP_Invoice__c.Total_Weight__c}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>Number of Packages:</b>
+                    </td>
+                    <td>
+                        <b>{!Number_of_Packages}</b>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <b>End Shipment(s):</b>
+                    </td>
+                    <td>
+                        <b>{!AMP_Invoice__c.End_Shipment_s__c}</b>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="footer_last" style="page-break-inside:avoid; height:200px;">
+            <div style="border-top: 3px solid #000000;text-align: center;"></div>
+            <table style="width: 100%; margin:10px; border-spacing: 0;">
+                <tbody>
+                    <tr>
+                        <td style="width: 60%;" rowspan="7" valign="top">
+                            <div style="font-size: 12pt;">COMMENTS:</div>
+                        </td>
+                        <td style="width: 20%; border: solid black; border-right: none" bgcolor="#b6b3b3" align="right">
+                            <div>Sales Amount</div>
+                        </td>
+                        <td style="width: 20%; border: solid black; border-left: none" align="center">
+                            <div>{!AMP_Invoice__c.Sales_Amount__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%;" align="right">
+                            <div>Misc Charges</div>
+                        </td>
+                        <td style="width: 20%;" align="center">
+                            <div>{!AMP_Invoice__c.Misc_Charges__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%;" align="right">
+                            <div>Tariffs</div>
+                        </td>
+                        <td style="width: 20%;" align="center">
+                            <div>{!AMP_Invoice__c.Tariffs__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%;" align="right">
+                            <div>Freight</div>
+                        </td>
+                        <td style="width: 20%;" align="center">
+                            <div>{!AMP_Invoice__c.Freight__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%;" align="right">
+                            <div>Sales Tax</div>
+                        </td>
+                        <td style="width: 20%;" align="center">
+                            <div>{!AMP_Invoice__c.Sales_Tax__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%;" align="right">
+                            <div>Prepaid Amount</div>
+                        </td>
+                        <td style="width: 20%;" align="center">
+                            <div>{!AMP_Invoice__c.Prepaid_Amount__c}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width: 20%; border: solid black; border-right: none" bgcolor="#b6b3b3" align="right">
+                            <div>Total</div>
+                        </td>
+                        <td style="width: 20%; border: solid black; border-left: none" align="center">
+                            <div>{!AMP_Invoice__c.Total__c}</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
+
+</apex:page>
+```
+
 
 
 
