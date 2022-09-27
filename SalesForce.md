@@ -1705,9 +1705,11 @@ public static void unlockRecord(Set<Id> IdList){
 </apex:page>
 ```
 
+### 对象共享
 
-
-
+```java
+AccountShare accountShareObj = new AccountShare(AccountId = acc.Id, UserOrGroupId = acc.AgentBelongOwnerID__c, AccountAccessLevel = 'Edit', OpportunityAccessLevel = 'Edit', CaseAccessLevel = 'Edit');
+```
 
 
 
