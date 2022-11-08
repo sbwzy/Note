@@ -1711,7 +1711,9 @@ public static void unlockRecord(Set<Id> IdList){
 AccountShare accountShareObj = new AccountShare(AccountId = acc.Id, UserOrGroupId = acc.AgentBelongOwnerID__c, AccountAccessLevel = 'Edit', OpportunityAccessLevel = 'Edit', CaseAccessLevel = 'Edit');
 ```
 
+### 屏幕流获取当前记录Id
 
+在流中新建一个可供输入的文本变量，命名为recordId即可调用该变量以获取记录Id
 
 
 
