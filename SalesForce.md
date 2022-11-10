@@ -1715,6 +1715,18 @@ AccountShare accountShareObj = new AccountShare(AccountId = acc.Id, UserOrGroupI
 
 在流中新建一个可供输入的文本变量，命名为recordId即可调用该变量以获取记录Id
 
+### PDF table \<thead>每页重复，表格不在两页之间截断
+
+````css
+table {
+    -fs-table-paginate: paginate;
+    border-collapse:collapse;
+    border-spacing:0px 20px; /*设置单元格间距为0*/
+}
+````
+
+
+
 
 
 
