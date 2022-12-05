@@ -947,11 +947,19 @@ public without sharing class SFInfoCreateInterface {
 }
 ```
 
-### JS中是用自定义标签Label
+### JS中使用自定义标签Label
 
 ```js
 $A.get("$Label.c.ApplyAccountType1")
 ```
+
+### APEX中使用自定义标签Label
+
+```java
+System.Label.caseCon;
+```
+
+
 
 ### 获取对象类型
 
@@ -1724,6 +1732,12 @@ table {
     border-spacing:0px 20px; /*设置单元格间距为0*/
 }
 ````
+
+### VF页面中字段有值就展示
+
+```html
+<apex:outputField value="{!Fixed_Product_Request__c.AMPFixed_Product_Request__c}" rendered="{!Fixed_Product_Request__c.AMPFixed_Product_Request__c != ''}" />
+```
 
 
 
