@@ -951,6 +951,7 @@ public without sharing class SFInfoCreateInterface {
 
 ```js
 $A.get("$Label.c.ApplyAccountType1")
+alert('{!$Label.QuoteDeletePrice1}');
 ```
 
 ### APEX中使用自定义标签Label
@@ -1737,6 +1738,25 @@ table {
 
 ```html
 <apex:outputField value="{!Fixed_Product_Request__c.AMPFixed_Product_Request__c}" rendered="{!Fixed_Product_Request__c.AMPFixed_Product_Request__c != ''}" />
+```
+
+### After Insert & update 中更新对象
+
+```java
+// 不能直接更新newList
+List<ContactPointAddress> newCPAList = new List<ContactPointAddress>();
+for (ContactPointAddress cpa : (List<ContactPointAddress>)newList){
+    ContactPointAddress cpass = new ContactPointAddress();
+    cpass.Id = cpa.Id;
+    cpass.State = cpa.State;
+    cpass.Region__c = cpa.Region__c;
+    cpass.CountryCode = cpa.CountryCode;
+    cpass.PostalCode = cpa.PostalCode;
+    newCPAList.add(cpass);
+}
+for (ContactPointAddress cpa : newCPAList){
+    // 逻辑处理
+}
 ```
 
 
