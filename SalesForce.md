@@ -1759,7 +1759,20 @@ for (ContactPointAddress cpa : newCPAList){
 }
 ```
 
+### 发送HTML格式的邮件
 
+```java
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+        email.setSenderDisplayName('the sender name you want to show');
+String str='<table border="1" cellspacing="0" width = "600" height = "150"><tr><th>File Name</th><th>Original Value</th><th>New Value</th><th>Update Time</th></tr><tr><td>Row 2, Column 1</td><td>Row 2, Column 2</td><td>Row 2, Column 1</td><td>Row 2, Column 2</td></tr><tr><td>Row 2, Column 1</td><td>Row 2, Column 2</td><td>Row 2, Column 1</td><td>Row 2, Column 2</td></tr></table>';
+        email.setHtmlBody(str);
+        email.setSubject('test email subject use html');
+        //addresses which you wanna send to
+        List<String> toAddresses = new List<String>();
+        toAddresses.add('1399138618@qq.com');
+        email.setToAddresses(toAddresses);
+        Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email});
+```
 
 
 
