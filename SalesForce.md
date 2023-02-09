@@ -1774,6 +1774,19 @@ String str='<table border="1" cellspacing="0" width = "600" height = "150"><tr><
         Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email});
 ```
 
+### page分页与禁止此元素内分页
+
+```html
+<div style="page-break-before: auto;">
+<!--
+always:必定分页
+auto:自动判断
+...
+-->
+
+<table style="page-break-inside:avoid;" >
+```
+
 
 
 
