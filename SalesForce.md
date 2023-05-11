@@ -53,7 +53,6 @@
 
 ```java
 public static void sendEmail(String ownFirstName,String conFirstName,String conLastName,String conCompanyName,String userEmail){
-    System.debug('进来发邮件');
     EmailTemplate temp =  [
         SELECT Id, Name, Subject, HtmlValue, Body, BrandTemplateId
         FROM EmailTemplate
@@ -119,6 +118,43 @@ public static void sendEmail(String ownFirstName,String conFirstName,String conL
 
  }
 ```
+
+#### 其他对象利用RecordId发邮件方法
+
+```java
+/**
+* @description 利用Lead Name为Email Sender的一条记录来使用模板发送自定义对象的邮件
+* @author robert | 05-11-2023 
+* @param recordId 记录Id
+* @param tempDeveloperName 模板DeveloperName
+* @param emailAddressList 收件人邮箱List
+**/
+public static void sendEmail(String recordId, String tempDeveloperName, List<String> emailAddressList){
+    List<Lead> leadList = [SELECT Id FROM Lead WHERE Name = 'Email Sender' limit 1];// 利用这条记录发邮件
+    List<EmailTemplate> temp =  [SELECT Id, Name, Subject, HtmlValue, Body, BrandTemplateId, DeveloperName FROM EmailTemplate WHERE DeveloperName =: tempDeveloperName];
+    List<Messaging.SingleEmailMessage> emailList = new List<Messaging.SingleEmailMessage>();
+
+    Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+    email.setTargetObjectId(leadList[0].Id);
+    email.setSaveAsActivity(false);
+    email.setTreatTargetObjectAsRecipient(false);
+    email.setWhatId(recordId);
+    email.setTemplateId(temp[0].Id);
+    email.setToAddresses(emailAddressList);
+
+    emailList.add(email);
+
+    if (!emailList.isEmpty()) {
+        try {
+            Messaging.sendEmail(emailList);
+        } catch (Exception e) {
+            System.debug(e.getMessage());
+        }
+    }
+}
+```
+
+
 
 ### 保存PDF为附件
 
@@ -1785,6 +1821,39 @@ auto:自动判断
 -->
 
 <table style="page-break-inside:avoid;" >
+```
+
+### 一个简单的在insert, update中通用的方法
+
+```java
+/**
+* @description 反写 Id,RequirementType__c 到产品选型上 APRNo__c,APRType__c
+* @author robert | 05-10-2023 
+* @param newList 
+* @param oldMap 
+**/
+public static void setFunction(List<SObject> newList, Map<Id, SObject> oldMap){
+    System.debug('setFunction');
+    Map<String, theObject> theObjMap = new Map<String, theObject>(); // <产品选型Id, 客户样机需求>
+
+    for(theObject item : (List<theObject>)newList){
+        // update
+        if(!oldMap.isEmpty()){
+            theObject oldItem = (theObject)oldMap.get(item.Id);
+            if(oldItem.changField__c != item.changField__c && item.changField__c != null){
+                theObjMap.put(item.changField__c, item);
+            }
+        // insert
+        }else {
+            if(item.changField__c != null){
+                theObjMap.put(item.changField__c, item);
+            }
+        }
+    }
+    if(!theObjMap.isEmpty()){
+        // function here
+    }
+}
 ```
 
 
