@@ -1856,6 +1856,20 @@ public static void setFunction(List<SObject> newList, Map<Id, SObject> oldMap){
 }
 ```
 
+### 查询审批人历史
+
+```SQL
+SELECT Id, TargetObjectId,TargetObject.Name, Status,  
+    (SELECT Id, StepStatus, OriginalActorId,OriginalActor.Name, ActorId,Actor.Name 
+    FROM StepsAndWorkitems 
+    WHERE OriginalActorId = '0052y000001sRFrAAM' OR OriginalActorId = '0052y000001sRSPAA2' OR OriginalActorId = '0052y000001seLtAAI') 
+FROM ProcessInstance
+WHERE 
+    ProcessDefinitionId = '04aBL000000Cb2I' 
+    AND CreatedDate = LAST_N_YEARS:1
+    Order BY CreatedDate DESC
+```
+
 
 
 
